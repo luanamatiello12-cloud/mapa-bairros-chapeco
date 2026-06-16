@@ -129,6 +129,13 @@
       padding-top: 2px;
     }
 
+    #status {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      padding-bottom: 4px;
+    }
+
     .marker-label {
       color: white;
       padding: 5px 10px;
@@ -149,6 +156,7 @@
 <div id="map"></div>
 
 <div id="painel">
+  <div id="status">Carregando dados...</div>
   <div id="lista"></div>
 
   <div id="form-add">
@@ -163,8 +171,23 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
-let meninas = JSON.parse(localStorage.getItem('meninas-chapeco') || 'null') || [
+const firebaseConfig = {
+  apiKey: "AIzaSyBAM2d9CroacEwr808ZcEELoVhH-jQpwl4",
+  authDomain: "mapa-meninas-chapeco.firebaseapp.com",
+  databaseURL: "https://mapa-meninas-chapeco-default-rtdb.firebaseio.com",
+  projectId: "mapa-meninas-chapeco",
+  storageBucket: "mapa-meninas-chapeco.firebasestorage.app",
+  messagingSenderId: "657001382612",
+  appId: "1:657001382612:web:89178b7b443ec0e8307141"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database().ref('meninas');
+
+const meninasIniciais = [
   { nome: "Tayna",            bairro: "Passo dos Fortes",          lat: -27.1060, lng: -52.5980, cor: "#7F77DD" },
   { nome: "Marta",            bairro: "Efapi (perto do presídio)", lat: -27.0930, lng: -52.6210, cor: "#D85A30" },
   { nome: "Manu",             bairro: "Efapi (perto das Araras)",  lat: -27.0930, lng: -52.6210, cor: "#1D9E75" },
@@ -173,9 +196,10 @@ let meninas = JSON.parse(localStorage.getItem('meninas-chapeco') || 'null') || [
   { nome: "Thaemi",           bairro: "São Cristóvão",             lat: -27.0980, lng: -52.6350, cor: "#378ADD" },
   { nome: "Letícia Vanzella", bairro: "Centro",                    lat: -27.1005, lng: -52.6152, cor: "#639922" },
   { nome: "Luana Matiello",   bairro: "São Pedro",                 lat: -27.1080, lng: -52.6120, cor: "#E24B4A" },
-  { nome: "Isadora Reichert", bairro: "Bela Vista",                lat: -27.1100, lng: -52.6250, cor: "#533AB7" },
+  { nome: "Isadora Reichert", bairro: "Bela Vista",                lat: -27.1100, lng: -52.6250, cor: "#533AB7" }
 ];
 
+let meninas = [];
 let latSelecionada = null;
 let lngSelecionada = null;
 let markerTemp = null;
@@ -197,8 +221,8 @@ map.on('click', function(e) {
   document.getElementById('instrucao').style.color = '#1D9E75';
 });
 
-function salvar() {
-  localStorage.setItem('meninas-chapeco', JSON.stringify(meninas));
+function salvarNoBanco() {
+  db.set(meninas);
 }
 
 function renderTudo() {
@@ -233,8 +257,7 @@ function renderTudo() {
 function remover(i) {
   if (!confirm(`Remover ${meninas[i].nome}?`)) return;
   meninas.splice(i, 1);
-  salvar();
-  renderTudo();
+  salvarNoBanco();
 }
 
 function adicionarMenina() {
@@ -247,8 +270,7 @@ function adicionarMenina() {
   if (!latSelecionada) { alert('Clique no mapa para marcar a localização!'); return; }
 
   meninas.push({ nome, bairro, lat: latSelecionada, lng: lngSelecionada, cor });
-  salvar();
-  renderTudo();
+  salvarNoBanco();
 
   document.getElementById('inp-nome').value = '';
   document.getElementById('inp-bairro').value = '';
@@ -258,7 +280,21 @@ function adicionarMenina() {
   document.getElementById('instrucao').style.color = '#999';
 }
 
-renderTudo();
+// Carrega dados do Firebase em tempo real
+db.on('value', snapshot => {
+  const dados = snapshot.val();
+  if (dados && Array.isArray(dados)) {
+    meninas = dados;
+  } else {
+    meninas = [...meninasIniciais];
+    salvarNoBanco();
+  }
+  document.getElementById('status').textContent = 'Sincronizado ✅';
+  renderTudo();
+}, erro => {
+  document.getElementById('status').textContent = 'Erro ao carregar dados ❌';
+  console.error(erro);
+});
 </script>
 </body>
 </html>
