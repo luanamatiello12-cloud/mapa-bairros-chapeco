@@ -3,508 +3,690 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mapa dos Bairros de Chapecó - SC</title>
+  <title>📍 Meninas de Chapecó</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
-    header { background: #1a5276; color: white; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-    header h1 { margin: 0; font-size: 1.25rem; }
-    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    button { background: #2874a6; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; }
-    button:hover { background: #1f618d; }
-    button.secondary { background: #5d6d7e; }
-    button.secondary:hover { background: #4a5866; }
-    button.danger { background: #c0392b; }
-    button.danger:hover { background: #922b21; }
-    .main { display: flex; height: calc(100% - 60px); }
-    #sidebar { width: 360px; min-width: 300px; background: #fff; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-    .sidebar-header { padding: 12px; border-bottom: 1px solid #eee; }
-    .search { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; margin-top: 8px; }
-    #bairros-list { flex: 1; overflow-y: auto; padding: 8px; }
-    .bairro-group { border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 8px; background: #fafafa; overflow: hidden; }
-    .bairro-title { padding: 10px 12px; background: #eaf2f8; font-weight: 600; color: #1a5276; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .bairro-title.drag-over { background: #aed6f1; }
-    .bairro-title .count { background: #1a5276; color: white; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; }
-    .bairro-items { padding: 8px; min-height: 36px; }
-    .bairro-items:empty::before { content: 'Arraste pessoas para cá'; color: #aaa; font-size: 0.85rem; display: block; text-align: center; padding: 8px; }
-    .person-card { background: white; border: 1px solid #d6eaf8; border-left: 4px solid #2874a6; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; cursor: grab; transition: transform 0.1s, box-shadow 0.1s; }
-    .person-card:active { cursor: grabbing; }
-    .person-card.dragging { opacity: 0.5; transform: rotate(2deg); }
-    .person-card .name { font-weight: 500; color: #2c3e50; }
-    .person-card .note { font-size: 0.75rem; color: #7f8c8d; margin-top: 2px; }
-    .person-actions { display: flex; gap: 4px; }
-    .person-actions button { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; }
-    #map { flex: 1; }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-    .modal { background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 420px; }
-    .modal h2 { margin-top: 0; color: #1a5276; font-size: 1.1rem; }
-    .modal label { display: block; margin: 10px 0 4px; font-size: 0.9rem; color: #34495e; }
-    .modal input, .modal select { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; }
-    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-    .legend { position: absolute; bottom: 20px; right: 20px; background: rgba(255,255,255,0.95); padding: 10px 14px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 500; font-size: 0.85rem; max-width: 220px; }
-    .legend strong { display: block; margin-bottom: 6px; color: #1a5276; }
-    .hidden { display: none; }
-    @media (max-width: 768px) { .main { flex-direction: column; } #sidebar { width: 100%; height: 40%; } #map { height: 60%; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+
+    h1 {
+      text-align: center;
+      padding: 14px 12px 10px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #222;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    #map { width: 100%; height: 52vh; }
+
+    #painel {
+      background: white;
+      border-top: 1px solid #e0e0e0;
+      height: calc(48vh - 50px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #abas {
+      display: flex;
+      border-bottom: 1px solid #eee;
+    }
+    .aba {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #777;
+      background: #fafafa;
+      cursor: pointer;
+      border: none;
+    }
+    .aba.ativa { color: #7F77DD; background: white; border-bottom: 2px solid #7F77DD; }
+
+    #conteudo {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 12px;
+    }
+
+    #lista {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8f8f8;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 13px;
+      cursor: grab;
+    }
+    .item:active { cursor: grabbing; }
+    .item.dragging { opacity: 0.5; }
+
+    .item-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .item-info { flex: 1; }
+    .item-nome { font-weight: 600; color: #222; }
+    .item-bairro { color: #777; font-size: 11px; }
+
+    .item-acoes {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-editar {
+      background: #e0e0e0;
+      border: none;
+      border-radius: 8px;
+      color: #555;
+      font-size: 12px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .btn-editar:hover { background: #d0d0d0; }
+
+    .btn-remover {
+      background: #fee2e2;
+      border: none;
+      border-radius: 8px;
+      color: #b91c1c;
+      font-size: 18px;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .btn-remover:hover { background: #fca5a5; }
+
+    #form-add {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding: 10px 12px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+
+    #form-add input, #form-add select {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+      background: white;
+    }
+    #form-add input:focus, #form-add select:focus { border-color: #7F77DD; }
+
+    .row { display: flex; gap: 7px; align-items: center; }
+
+    #cor-input {
+      width: 44px !important;
+      height: 38px;
+      padding: 2px 3px !important;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #btn-add {
+      flex: 1;
+      background: #7F77DD;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #btn-add:hover { background: #534AB7; }
+
+    #instrucao {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      padding-top: 2px;
+    }
+
+    .bairro-grupo {
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      background: #fafafa;
+    }
+    .bairro-titulo {
+      padding: 8px 10px;
+      background: #f0f0f0;
+      font-weight: 600;
+      font-size: 12px;
+      color: #555;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .bairro-titulo.drag-over { background: #e0d9fc; }
+    .bairro-titulo .count {
+      background: #7F77DD;
+      color: white;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .bairro-itens {
+      padding: 6px;
+      min-height: 32px;
+    }
+    .bairro-itens:empty::before {
+      content: 'Arraste uma menina para cá';
+      color: #aaa;
+      font-size: 11px;
+      display: block;
+      text-align: center;
+      padding: 4px;
+    }
+
+    .acao-limpar {
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      padding: 6px;
+      cursor: pointer;
+    }
+    .acao-limpar:hover { color: #7F77DD; }
+
+    .marker-label {
+      color: white;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border: 2px solid white;
+      font-family: sans-serif;
+      cursor: pointer;
+    }
+
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .modal {
+      background: white;
+      padding: 18px;
+      border-radius: 14px;
+      width: 100%;
+      max-width: 360px;
+    }
+    .modal h2 { margin: 0 0 12px; font-size: 16px; color: #222; }
+    .modal label { display: block; margin: 8px 0 4px; font-size: 12px; color: #555; }
+    .modal input, .modal select {
+      width: 100%; padding: 8px 10px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 14px;
+    }
+    .modal-acoes { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+    .modal-acoes button {
+      padding: 8px 14px; border: none; border-radius: 8px;
+      font-size: 13px; cursor: pointer;
+    }
+    .btn-cancelar { background: #e0e0e0; color: #555; }
+    .btn-salvar { background: #7F77DD; color: white; }
+
+    @media (min-width: 769px) {
+      #map { height: 60vh; }
+      #painel { height: calc(40vh - 50px); }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>🗺️ Mapa dos Bairros de Chapecó - SC</h1>
-    <div class="controls">
-      <button onclick="abrirModal()">+ Adicionar Pessoa</button>
-      <button class="secondary" onclick="alternarCamada()">Alternar Satélite/Mapa</button>
-      <button class="secondary" onclick="exportarDados()">Exportar JSON</button>
-      <button class="secondary" onclick="document.getElementById('importar').click()">Importar JSON</button>
-      <input type="file" id="importar" class="hidden" accept="application/json" onchange="importarDados(this)">
-    </div>
-  </header>
 
-  <div class="main">
-    <aside id="sidebar">
-      <div class="sidebar-header">
-        <strong>Pessoas por Bairro</strong>
-        <input type="text" class="search" id="busca" placeholder="Buscar pessoa ou bairro..." oninput="filtrar()">
-      </div>
-      <div id="bairros-list"></div>
-    </aside>
-    <div id="map"></div>
+<h1>📍 Meninas de Chapecó</h1>
+<div id="map"></div>
+
+<div id="painel">
+  <div id="abas">
+    <button class="aba ativa" onclick="mostrarAba('pessoas')">Pessoas</button>
+    <button class="aba" onclick="mostrarAba('bairros')">Bairros</button>
   </div>
 
-  <div class="modal-overlay" id="modal">
-    <div class="modal">
-      <h2 id="modal-titulo">Adicionar Pessoa</h2>
-      <input type="hidden" id="pessoa-id">
-      <label for="pessoa-nome">Nome</label>
-      <input type="text" id="pessoa-nome" placeholder="Ex: Maria Silva">
-      <label for="pessoa-bairro">Bairro</label>
-      <select id="pessoa-bairro"></select>
-      <label for="pessoa-obs">Observação</label>
-      <input type="text" id="pessoa-obs" placeholder="Ex: perto do presídio, casa dos pais">
-      <div class="modal-actions">
-        <button class="secondary" onclick="fecharModal()">Cancelar</button>
-        <button onclick="salvarPessoa()">Salvar</button>
-      </div>
+  <div id="conteudo">
+    <div id="aba-pessoas">
+      <div id="lista"></div>
     </div>
+    <div id="aba-bairros" style="display:none;"></div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // ============================================================
-    // DADOS DOS BAIRROS DE CHAPECÓ/SC (coordenadas aproximadas)
-    // Baseado na delimitação oficial da Prefeitura Municipal.
-    // ============================================================
-    const bairros = [
-      { nome: "Centro", lat: -27.1005, lng: -52.6152 },
-      { nome: "Efapi", lat: -27.0930, lng: -52.6210 },
-      { nome: "Líder", lat: -27.0875, lng: -52.6080 },
-      { nome: "Araras", lat: -27.0960, lng: -52.6280 },
-      { nome: "SAIC", lat: -27.1040, lng: -52.6060 },
-      { nome: "Jardins", lat: -27.1110, lng: -52.6000 },
-      { nome: "Belvedere", lat: -27.0820, lng: -52.6140 },
-      { nome: "Trevo", lat: -27.0900, lng: -52.5950 },
-      { nome: "Fronteira Sul", lat: -27.0950, lng: -52.5850 },
-      { nome: "Engenho Braun", lat: -27.1020, lng: -52.5780 },
-      { nome: "Paraíso", lat: -27.0800, lng: -52.6250 },
-      { nome: "Lajeado", lat: -27.0750, lng: -52.6100 },
-      { nome: "Água Santa", lat: -27.0650, lng: -52.6000 },
-      { nome: "Vila Real", lat: -27.0880, lng: -52.6000 },
-      { nome: "Santa Paulina", lat: -27.0720, lng: -52.6200 },
-      { nome: "Desbravador", lat: -27.1180, lng: -52.5950 },
-      { nome: "Passo dos Fortes", lat: -27.1060, lng: -52.5980 },
-      { nome: "Autódromo", lat: -27.1300, lng: -52.6100 },
-      { nome: "Esplanada", lat: -27.0850, lng: -52.6320 },
-      { nome: "Campestre", lat: -27.0700, lng: -52.6300 },
-      { nome: "Palmital", lat: -27.1200, lng: -52.6120 },
-      { nome: "São Cristóvão", lat: -27.0980, lng: -52.6350 },
-      { nome: "Seminário", lat: -27.1080, lng: -52.6280 },
-      { nome: "Santo Antônio", lat: -27.1150, lng: -52.6050 },
-      { nome: "Cristo Rei", lat: -27.1250, lng: -52.6200 },
-      { nome: "Universitário", lat: -27.1000, lng: -52.6450 },
-      { nome: "Bela Vista", lat: -27.1100, lng: -52.6250 },
-      { nome: "Santa Maria", lat: -27.0830, lng: -52.6160 },
-      { nome: "São Lucas", lat: -27.1280, lng: -52.6300 },
-      { nome: "Presidente Médici", lat: -27.1150, lng: -52.6200 },
-      { nome: "Dom Gerônimo", lat: -27.1350, lng: -52.6150 },
-      { nome: "Santos Dumont", lat: -27.0750, lng: -52.6400 },
-      { nome: "Eldorado", lat: -27.0880, lng: -52.6400 },
-      { nome: "Bom Retiro", lat: -27.0680, lng: -52.6500 },
-      { nome: "Progresso", lat: -27.1250, lng: -52.6150 },
-      { nome: "Maria Goretti", lat: -27.1050, lng: -52.6400 },
-      { nome: "Alvorada", lat: -27.1150, lng: -52.6350 },
-      { nome: "Bom Pastor", lat: -27.0920, lng: -52.6500 },
-      { nome: "Boa Vista", lat: -27.0780, lng: -52.6600 },
-      { nome: "Pinheirinho", lat: -27.1220, lng: -52.6000 },
-      { nome: "Jardim Itália", lat: -27.1120, lng: -52.6320 },
-      { nome: "Quedas do Palmital", lat: -27.1380, lng: -52.6050 },
-      { nome: "Dom Pascoal", lat: -27.1300, lng: -52.6250 },
-      { nome: "Parque das Palmeiras", lat: -27.1120, lng: -52.6380 },
-      { nome: "Jardim América", lat: -27.1050, lng: -52.6300 },
-      { nome: "Industrial", lat: -27.1150, lng: -52.5900 },
-      { nome: "Jardim Europa", lat: -27.1180, lng: -52.6320 },
-      { nome: "Monte Belo", lat: -27.1080, lng: -52.6450 },
-      { nome: "São Pedro", lat: -27.1080, lng: -52.6120 },
-      { nome: "Vila Rica", lat: -27.0950, lng: -52.6050 }
-    ];
+  <div id="form-add">
+    <input id="inp-nome" type="text" placeholder="Nome (ex: Ana)" />
+    <select id="inp-bairro">
+      <option value="">Selecione o bairro</option>
+    </select>
+    <p id="instrucao">📌 Clique no mapa para ajustar a posição (opcional)</p>
+    <div class="row">
+      <input id="cor-input" type="color" value="#7F77DD" title="Escolha a cor" />
+      <button id="btn-add" onclick="adicionarPessoa()">+ Adicionar</button>
+    </div>
+  </div>
+</div>
 
-    // ============================================================
-    // PESSOAS INICIAIS (conforme solicitado pelo usuário)
-    // ============================================================
-    const pessoasIniciais = [
-      { id: "p1", nome: "Tayna", bairro: "Passo dos Fortes", obs: "" },
-      { id: "p2", nome: "Marta", bairro: "Efapi", obs: "perto presídio" },
-      { id: "p3", nome: "Manu", bairro: "Efapi", obs: "perto da araras" },
-      { id: "p4", nome: "Cecília", bairro: "Presidente Médici", obs: "" },
-      { id: "p5", nome: "Letícia Begnini", bairro: "Jardim América", obs: "" },
-      { id: "p6", nome: "Thaemi", bairro: "São Cristóvão", obs: "" },
-      { id: "p7", nome: "Letícia Vanzella", bairro: "Centro", obs: "" },
-      { id: "p8", nome: "Luana Matiello", bairro: "São Pedro", obs: "" },
-      { id: "p9", nome: "Isadora Reichert", bairro: "Bela Vista", obs: "" }
-    ];
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>Editar Pessoa</h2>
+    <input type="hidden" id="edit-id">
+    <label>Nome</label>
+    <input type="text" id="edit-nome" placeholder="Nome">
+    <label>Bairro</label>
+    <select id="edit-bairro"></select>
+    <label>Observação</label>
+    <input type="text" id="edit-obs" placeholder="Ex: perto do presídio">
+    <label>Cor</label>
+    <input type="color" id="edit-cor">
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarEdicao()">Salvar</button>
+    </div>
+  </div>
+</div>
 
-    // Estado
-    let pessoas = [];
-    let map, camadaSatelite, camadaMapa, camadaAtiva = 'satelite';
-    const marcadores = {};
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ============================================================
+// BAIRROS DE CHAPECÓ/SC
+// ============================================================
+const bairros = [
+  { nome: "Centro", lat: -27.1005, lng: -52.6152 },
+  { nome: "Efapi", lat: -27.0930, lng: -52.6210 },
+  { nome: "Líder", lat: -27.0875, lng: -52.6080 },
+  { nome: "Araras", lat: -27.0960, lng: -52.6280 },
+  { nome: "SAIC", lat: -27.1040, lng: -52.6060 },
+  { nome: "Jardins", lat: -27.1110, lng: -52.6000 },
+  { nome: "Belvedere", lat: -27.0820, lng: -52.6140 },
+  { nome: "Trevo", lat: -27.0900, lng: -52.5950 },
+  { nome: "Fronteira Sul", lat: -27.0950, lng: -52.5850 },
+  { nome: "Engenho Braun", lat: -27.1020, lng: -52.5780 },
+  { nome: "Paraíso", lat: -27.0800, lng: -52.6250 },
+  { nome: "Lajeado", lat: -27.0750, lng: -52.6100 },
+  { nome: "Água Santa", lat: -27.0650, lng: -52.6000 },
+  { nome: "Vila Real", lat: -27.0880, lng: -52.6000 },
+  { nome: "Santa Paulina", lat: -27.0720, lng: -52.6200 },
+  { nome: "Desbravador", lat: -27.1180, lng: -52.5950 },
+  { nome: "Passo dos Fortes", lat: -27.1060, lng: -52.5980 },
+  { nome: "Autódromo", lat: -27.1300, lng: -52.6100 },
+  { nome: "Esplanada", lat: -27.0850, lng: -52.6320 },
+  { nome: "Campestre", lat: -27.0700, lng: -52.6300 },
+  { nome: "Palmital", lat: -27.1200, lng: -52.6120 },
+  { nome: "São Cristóvão", lat: -27.0980, lng: -52.6350 },
+  { nome: "Seminário", lat: -27.1080, lng: -52.6280 },
+  { nome: "Santo Antônio", lat: -27.1150, lng: -52.6050 },
+  { nome: "Cristo Rei", lat: -27.1250, lng: -52.6200 },
+  { nome: "Universitário", lat: -27.1000, lng: -52.6450 },
+  { nome: "Bela Vista", lat: -27.1100, lng: -52.6250 },
+  { nome: "Santa Maria", lat: -27.0830, lng: -52.6160 },
+  { nome: "São Lucas", lat: -27.1280, lng: -52.6300 },
+  { nome: "Presidente Médici", lat: -27.1150, lng: -52.6200 },
+  { nome: "Dom Gerônimo", lat: -27.1350, lng: -52.6150 },
+  { nome: "Santos Dumont", lat: -27.0750, lng: -52.6400 },
+  { nome: "Eldorado", lat: -27.0880, lng: -52.6400 },
+  { nome: "Bom Retiro", lat: -27.0680, lng: -52.6500 },
+  { nome: "Progresso", lat: -27.1250, lng: -52.6150 },
+  { nome: "Maria Goretti", lat: -27.1050, lng: -52.6400 },
+  { nome: "Alvorada", lat: -27.1150, lng: -52.6350 },
+  { nome: "Bom Pastor", lat: -27.0920, lng: -52.6500 },
+  { nome: "Boa Vista", lat: -27.0780, lng: -52.6600 },
+  { nome: "Pinheirinho", lat: -27.1220, lng: -52.6000 },
+  { nome: "Jardim Itália", lat: -27.1120, lng: -52.6320 },
+  { nome: "Quedas do Palmital", lat: -27.1380, lng: -52.6050 },
+  { nome: "Dom Pascoal", lat: -27.1300, lng: -52.6250 },
+  { nome: "Parque das Palmeiras", lat: -27.1120, lng: -52.6380 },
+  { nome: "Jardim América", lat: -27.1050, lng: -52.6300 },
+  { nome: "Industrial", lat: -27.1150, lng: -52.5900 },
+  { nome: "Jardim Europa", lat: -27.1180, lng: -52.6320 },
+  { nome: "Monte Belo", lat: -27.1080, lng: -52.6450 },
+  { nome: "São Pedro", lat: -27.1080, lng: -52.6120 },
+  { nome: "Vila Rica", lat: -27.0950, lng: -52.6050 }
+];
 
-    // ============================================================
-    // INICIALIZAÇÃO
-    // ============================================================
-    function init() {
-      carregarDados();
-      initMapa();
-      renderSidebar();
-      preencherSelectBairros();
-    }
+const coresPadrao = [
+  "#7F77DD", "#D85A30", "#1D9E75", "#D4537E", "#BA7517",
+  "#378ADD", "#639922", "#E24B4A", "#533AB7", "#9C27B0",
+  "#009688", "#FF9800", "#795548", "#607D8B"
+];
 
-    function carregarDados() {
-      const salvo = localStorage.getItem('mapaChapecoPessoas');
-      if (salvo) {
-        try { pessoas = JSON.parse(salvo); } catch (e) { pessoas = [...pessoasIniciais]; }
-      } else {
-        pessoas = [...pessoasIniciais];
-      }
-    }
+function corPorIndex(i) { return coresPadrao[i % coresPadrao.length]; }
 
-    function salvarDados() {
-      localStorage.setItem('mapaChapecoPessoas', JSON.stringify(pessoas));
-    }
+// ============================================================
+// DADOS INICIAIS
+// ============================================================
+const pessoasIniciais = [
+  { id: "p1", nome: "Tayna", bairro: "Passo dos Fortes", obs: "", lat: -27.1060, lng: -52.5980 },
+  { id: "p2", nome: "Marta", bairro: "Efapi", obs: "perto presídio", lat: -27.0930, lng: -52.6210 },
+  { id: "p3", nome: "Manu", bairro: "Efapi", obs: "perto das Araras", lat: -27.0930, lng: -52.6210 },
+  { id: "p4", nome: "Cecília", bairro: "Presidente Médici", obs: "", lat: -27.1150, lng: -52.6200 },
+  { id: "p5", nome: "Letícia Begnini", bairro: "Jardim América", obs: "", lat: -27.1050, lng: -52.6300 },
+  { id: "p6", nome: "Thaemi", bairro: "São Cristóvão", obs: "", lat: -27.0980, lng: -52.6350 },
+  { id: "p7", nome: "Letícia Vanzella", bairro: "Centro", obs: "", lat: -27.1005, lng: -52.6152 },
+  { id: "p8", nome: "Luana Matiello", bairro: "São Pedro", obs: "", lat: -27.1080, lng: -52.6120 },
+  { id: "p9", nome: "Isadora Reichert", bairro: "Bela Vista", obs: "", lat: -27.1100, lng: -52.6250 }
+].map((p, i) => ({ ...p, cor: p.cor || corPorIndex(i) }));
 
-    function atualizarMarcadores() {
-      // Bairros que devem ter marcador (com pelo menos 1 pessoa)
-      const bairrosComPessoas = new Set(pessoas.map(p => p.bairro).filter(Boolean));
+let pessoas = [];
+let marcadoresNoMapa = [];
+let latTemp = null, lngTemp = null, markerTemp = null;
 
-      // Remover marcadores de bairros sem pessoas
-      Object.keys(marcadores).forEach(nome => {
-        if (!bairrosComPessoas.has(nome)) {
-          map.removeLayer(marcadores[nome]);
-          delete marcadores[nome];
-        }
-      });
+const map = L.map('map').setView([-27.1005, -52.6152], 13);
 
-      // Adicionar marcadores para bairros com pessoas que ainda não têm
-      bairrosComPessoas.forEach(nome => {
-        if (marcadores[nome]) {
-          atualizarPopup(nome);
-          return;
-        }
-        const b = bairros.find(x => x.nome === nome);
-        if (!b) return;
-        const marker = L.marker([b.lat, b.lng]).addTo(map);
-        marker.bindPopup(criarPopupContent(b.nome));
-        marker.on('click', () => atualizarPopup(b.nome));
-        marcadores[b.nome] = marker;
-        atualizarPopup(b.nome);
-      });
-    }
+const camadaSatelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri &mdash; Source: Esri',
+  maxZoom: 19
+});
+const camadaMapa = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+});
+camadaSatelite.addTo(map);
 
-    function initMapa() {
-      map = L.map('map').setView([-27.1005, -52.6152], 13);
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+function init() {
+  carregarDados();
+  preencherSelects();
+  renderTudo();
+}
 
-      camadaSatelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-        maxZoom: 19
-      });
+function carregarDados() {
+  const salvo = localStorage.getItem('mapaChapecoPessoas');
+  if (salvo) {
+    try { pessoas = JSON.parse(salvo); }
+    catch (e) { pessoas = [...pessoasIniciais]; }
+  } else {
+    pessoas = [...pessoasIniciais];
+  }
+  // Garante cor para pessoas antigas sem cor
+  pessoas.forEach((p, i) => { if (!p.cor) p.cor = corPorIndex(i); });
+}
 
-      camadaMapa = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19
-      });
+function salvar() {
+  localStorage.setItem('mapaChapecoPessoas', JSON.stringify(pessoas));
+}
 
-      camadaSatelite.addTo(map);
-
-      atualizarMarcadores();
-
-      const legend = L.control({ position: 'bottomright' });
-      legend.onAdd = function () {
-        const div = L.DomUtil.create('div', 'legend');
-        div.innerHTML = '<strong>Legenda</strong>Clique no marcador para ver/editar pessoas.<br>Arraste os cards na lista lateral para mudar de bairro.';
-        return div;
-      };
-      legend.addTo(map);
-    }
-
-    function alternarCamada() {
-      if (camadaAtiva === 'satelite') {
-        map.removeLayer(camadaSatelite);
-        camadaMapa.addTo(map);
-        camadaAtiva = 'mapa';
-      } else {
-        map.removeLayer(camadaMapa);
-        camadaSatelite.addTo(map);
-        camadaAtiva = 'satelite';
-      }
-    }
-
-    // ============================================================
-    // SIDEBAR
-    // ============================================================
-    function renderSidebar() {
-      const container = document.getElementById('bairros-list');
-      container.innerHTML = '';
-
-      // Agrupar pessoas por bairro
-      const grupos = {};
-      bairros.forEach(b => grupos[b.nome] = []);
-      grupos['Não alocado'] = [];
-
-      pessoas.forEach(p => {
-        if (grupos[p.bairro]) grupos[p.bairro].push(p);
-        else grupos['Não alocado'].push(p);
-      });
-
-      const termo = document.getElementById('busca')?.value.toLowerCase() || '';
-
-      bairros.forEach(b => {
-        const lista = grupos[b.nome];
-        if (termo && !b.nome.toLowerCase().includes(termo) && !lista.some(p => p.nome.toLowerCase().includes(termo))) return;
-        container.appendChild(criarGrupoBairro(b.nome, lista));
-      });
-
-      if (grupos['Não alocado'].length > 0 || termo === '') {
-        container.appendChild(criarGrupoBairro('Não alocado', grupos['Não alocado']));
-      }
-    }
-
-    function criarGrupoBairro(nomeBairro, lista) {
-      const div = document.createElement('div');
-      div.className = 'bairro-group';
-      div.dataset.bairro = nomeBairro;
-
-      const title = document.createElement('div');
-      title.className = 'bairro-title';
-      title.innerHTML = `<span>${nomeBairro}</span><span class="count">${lista.length}</span>`;
-      title.ondragover = (e) => { e.preventDefault(); title.classList.add('drag-over'); };
-      title.ondragleave = () => title.classList.remove('drag-over');
-      title.ondrop = (e) => {
-        e.preventDefault();
-        title.classList.remove('drag-over');
-        const id = e.dataTransfer.getData('text/pessoa-id');
-        moverPessoa(id, nomeBairro);
-      };
-      title.onclick = () => {
-        const items = div.querySelector('.bairro-items');
-        items.classList.toggle('hidden');
-      };
-
-      const items = document.createElement('div');
-      items.className = 'bairro-items';
-      lista.forEach(p => items.appendChild(criarCardPessoa(p)));
-
-      div.appendChild(title);
-      div.appendChild(items);
-      return div;
-    }
-
-    function criarCardPessoa(p) {
-      const div = document.createElement('div');
-      div.className = 'person-card';
-      div.draggable = true;
-      div.dataset.id = p.id;
-      div.ondragstart = (e) => {
-        e.dataTransfer.setData('text/pessoa-id', p.id);
-        div.classList.add('dragging');
-      };
-      div.ondragend = () => div.classList.remove('dragging');
-
-      const info = document.createElement('div');
-      info.innerHTML = `<div class="name">${p.nome}</div>${p.obs ? `<div class="note">${p.obs}</div>` : ''}`;
-
-      const actions = document.createElement('div');
-      actions.className = 'person-actions';
-      actions.innerHTML = `
-        <button onclick="editarPessoa('${p.id}')">Editar</button>
-        <button class="danger" onclick="excluirPessoa('${p.id}')">Excluir</button>
-      `;
-
-      div.appendChild(info);
-      div.appendChild(actions);
-      return div;
-    }
-
-    // ============================================================
-    // AÇÕES DE PESSOAS
-    // ============================================================
-    function moverPessoa(id, novoBairro) {
-      const p = pessoas.find(x => x.id === id);
-      if (!p) return;
-      p.bairro = novoBairro === 'Não alocado' ? '' : novoBairro;
-      salvarDados();
-      atualizarMarcadores();
-      renderSidebar();
-      if (p.bairro && marcadores[p.bairro]) marcadores[p.bairro].openPopup();
-    }
-
-    function abrirModal(id = null) {
-      document.getElementById('modal').style.display = 'flex';
-      document.getElementById('modal-titulo').textContent = id ? 'Editar Pessoa' : 'Adicionar Pessoa';
-      document.getElementById('pessoa-id').value = id || '';
-      document.getElementById('pessoa-nome').value = '';
-      document.getElementById('pessoa-bairro').value = '';
-      document.getElementById('pessoa-obs').value = '';
-      if (id) {
-        const p = pessoas.find(x => x.id === id);
-        if (p) {
-          document.getElementById('pessoa-nome').value = p.nome;
-          document.getElementById('pessoa-bairro').value = p.bairro || '';
-          document.getElementById('pessoa-obs').value = p.obs || '';
-        }
-      }
-    }
-
-    function fecharModal() {
-      document.getElementById('modal').style.display = 'none';
-    }
-
-    function salvarPessoa() {
-      const id = document.getElementById('pessoa-id').value;
-      const nome = document.getElementById('pessoa-nome').value.trim();
-      const bairro = document.getElementById('pessoa-bairro').value;
-      const obs = document.getElementById('pessoa-obs').value.trim();
-      if (!nome) return alert('Informe o nome.');
-
-      if (id) {
-        const p = pessoas.find(x => x.id === id);
-        p.nome = nome;
-        p.bairro = bairro;
-        p.obs = obs;
-      } else {
-        pessoas.push({ id: 'p' + Date.now(), nome, bairro, obs });
-      }
-      salvarDados();
-      atualizarMarcadores();
-      renderSidebar();
-      fecharModal();
-      if (bairro && marcadores[bairro]) marcadores[bairro].openPopup();
-    }
-
-    function editarPessoa(id) { abrirModal(id); }
-
-    function excluirPessoa(id) {
-      if (!confirm('Tem certeza que deseja excluir?')) return;
-      pessoas = pessoas.filter(p => p.id !== id);
-      salvarDados();
-      atualizarMarcadores();
-      renderSidebar();
-    }
-
-    function filtrar() {
-      renderSidebar();
-    }
-
-    // ============================================================
-    // POPUP DO MAPA
-    // ============================================================
-    function criarPopupContent(nomeBairro) {
-      const div = document.createElement('div');
-      div.id = 'popup-' + nomeBairro.replace(/\s+/g, '-');
-      div.style.minWidth = '200px';
-      return div;
-    }
-
-    function atualizarPopup(nomeBairro) {
-      const bairroNormalizado = nomeBairro === 'Não alocado' ? '' : nomeBairro;
-      const lista = pessoas.filter(p => (p.bairro || 'Não alocado') === nomeBairro);
-      const marker = marcadores[bairroNormalizado] || null;
-      if (!marker) return;
-
-      let html = `<strong>${nomeBairro}</strong><br><small>${lista.length} pessoa(s)</small><hr style="margin:8px 0;border:none;border-top:1px solid #ddd;">`;
-      if (lista.length === 0) {
-        html += '<em>Nenhuma pessoa neste bairro.</em>';
-      } else {
-        html += '<ul style="margin:0;padding-left:16px;">';
-        lista.forEach(p => {
-          html += `<li>${p.nome}${p.obs ? ` <small>(${p.obs})</small>` : ''}</li>`;
-        });
-        html += '</ul>';
-      }
-      html += `<div style="margin-top:8px;text-align:right;"><button onclick="abrirModalAdicionarNoBairro('${nomeBairro}')">+ Adicionar</button></div>`;
-      marker.setPopupContent(html);
-    }
-
-    function abrirModalAdicionarNoBairro(nomeBairro) {
-      document.getElementById('modal').style.display = 'flex';
-      document.getElementById('modal-titulo').textContent = 'Adicionar Pessoa';
-      document.getElementById('pessoa-id').value = '';
-      document.getElementById('pessoa-nome').value = '';
-      document.getElementById('pessoa-bairro').value = nomeBairro === 'Não alocado' ? '' : nomeBairro;
-      document.getElementById('pessoa-obs').value = '';
-    }
-
-    // ============================================================
-    // SELECT DE BAIRROS NO MODAL
-    // ============================================================
-    function preencherSelectBairros() {
-      const select = document.getElementById('pessoa-bairro');
-      select.innerHTML = '<option value="">-- Não alocado --</option>';
-      bairros.forEach(b => {
-        const opt = document.createElement('option');
-        opt.value = b.nome;
-        opt.textContent = b.nome;
-        select.appendChild(opt);
-      });
-    }
-
-    // ============================================================
-    // IMPORTAR / EXPORTAR
-    // ============================================================
-    function exportarDados() {
-      const blob = new Blob([JSON.stringify(pessoas, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'pessoas-chapeco.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function importarDados(input) {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const dados = JSON.parse(e.target.result);
-          if (!Array.isArray(dados)) throw new Error('Formato inválido');
-          pessoas = dados;
-          salvarDados();
-          atualizarMarcadores();
-          renderSidebar();
-          alert('Dados importados com sucesso!');
-        } catch (err) {
-          alert('Erro ao importar: ' + err.message);
-        }
-      };
-      reader.readAsText(file);
-      input.value = '';
-    }
-
-    // Fechar modal ao clicar fora
-    document.getElementById('modal').addEventListener('click', (e) => {
-      if (e.target.id === 'modal') fecharModal();
+function preencherSelects() {
+  const selects = [document.getElementById('inp-bairro'), document.getElementById('edit-bairro')];
+  selects.forEach(sel => {
+    if (!sel) return;
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">Selecione o bairro</option>';
+    bairros.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.nome;
+      opt.textContent = b.nome;
+      sel.appendChild(opt);
     });
+    sel.value = atual;
+  });
+}
 
-    window.addEventListener('load', init);
-  </script>
+// ============================================================
+// RENDERIZAÇÃO
+// ============================================================
+function renderTudo() {
+  // Limpa marcadores
+  marcadoresNoMapa.forEach(m => map.removeLayer(m));
+  marcadoresNoMapa = [];
+
+  // Renderiza lista de pessoas
+  const lista = document.getElementById('lista');
+  lista.innerHTML = '';
+
+  pessoas.forEach((p, i) => {
+    // Marcador no mapa
+    const icon = L.divIcon({
+      html: `<div class="marker-label" style="background:${p.cor}">${p.nome}</div>`,
+      className: '', iconAnchor: [0, 0]
+    });
+    const mk = L.marker([p.lat, p.lng], { icon })
+      .addTo(map)
+      .bindPopup(`<b>${p.nome}</b><br>${p.bairro}${p.obs ? '<br><small>' + p.obs + '</small>' : ''}`);
+    marcadoresNoMapa.push(mk);
+
+    // Card na lista
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.draggable = true;
+    div.dataset.id = p.id;
+    div.ondragstart = e => { e.dataTransfer.setData('text/pessoa-id', p.id); div.classList.add('dragging'); };
+    div.ondragend = () => div.classList.remove('dragging');
+    div.innerHTML = `
+      <span class="item-dot" style="background:${p.cor}"></span>
+      <div class="item-info">
+        <div class="item-nome">${p.nome}</div>
+        <div class="item-bairro">${p.bairro}${p.obs ? ' · ' + p.obs : ''}</div>
+      </div>
+      <div class="item-acoes">
+        <button class="btn-editar" onclick="abrirEditar('${p.id}')">Editar</button>
+        <button class="btn-remover" onclick="remover('${p.id}')" title="Remover">×</button>
+      </div>
+    `;
+    lista.appendChild(div);
+  });
+
+  renderBairros();
+}
+
+function renderBairros() {
+  const container = document.getElementById('aba-bairros');
+  container.innerHTML = '';
+
+  const grupos = {};
+  bairros.forEach(b => grupos[b.nome] = []);
+  grupos['Não alocado'] = [];
+
+  pessoas.forEach(p => {
+    if (grupos[p.bairro]) grupos[p.bairro].push(p);
+    else grupos['Não alocado'].push(p);
+  });
+
+  bairros.forEach(b => {
+    container.appendChild(criarGrupoBairro(b.nome, grupos[b.nome]));
+  });
+  if (grupos['Não alocado'].length) {
+    container.appendChild(criarGrupoBairro('Não alocado', grupos['Não alocado']));
+  }
+
+  const limpar = document.createElement('div');
+  limpar.className = 'acao-limpar';
+  limpar.textContent = '🗑️ Limpar todos os dados';
+  limpar.onclick = () => {
+    if (confirm('Tem certeza que deseja apagar TODAS as pessoas?')) {
+      pessoas = [];
+      salvar();
+      renderTudo();
+    }
+  };
+  container.appendChild(limpar);
+}
+
+function criarGrupoBairro(nomeBairro, lista) {
+  const div = document.createElement('div');
+  div.className = 'bairro-grupo';
+
+  const titulo = document.createElement('div');
+  titulo.className = 'bairro-titulo';
+  titulo.innerHTML = `<span>${nomeBairro}</span><span class="count">${lista.length}</span>`;
+  titulo.ondragover = e => { e.preventDefault(); titulo.classList.add('drag-over'); };
+  titulo.ondragleave = () => titulo.classList.remove('drag-over');
+  titulo.ondrop = e => {
+    e.preventDefault();
+    titulo.classList.remove('drag-over');
+    moverPessoa(e.dataTransfer.getData('text/pessoa-id'), nomeBairro);
+  };
+
+  const itens = document.createElement('div');
+  itens.className = 'bairro-itens';
+  lista.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'item';
+    card.draggable = true;
+    card.dataset.id = p.id;
+    card.ondragstart = e => { e.dataTransfer.setData('text/pessoa-id', p.id); card.classList.add('dragging'); };
+    card.ondragend = () => card.classList.remove('dragging');
+    card.innerHTML = `
+      <span class="item-dot" style="background:${p.cor}"></span>
+      <div class="item-info">
+        <div class="item-nome">${p.nome}</div>
+        ${p.obs ? `<div class="item-bairro">${p.obs}</div>` : ''}
+      </div>
+      <div class="item-acoes">
+        <button class="btn-editar" onclick="abrirEditar('${p.id}')">Editar</button>
+        <button class="btn-remover" onclick="remover('${p.id}')" title="Remover">×</button>
+      </div>
+    `;
+    itens.appendChild(card);
+  });
+
+  div.appendChild(titulo);
+  div.appendChild(itens);
+  return div;
+}
+
+// ============================================================
+// AÇÕES
+// ============================================================
+function moverPessoa(id, novoBairro) {
+  const p = pessoas.find(x => x.id === id);
+  if (!p) return;
+  p.bairro = novoBairro === 'Não alocado' ? '' : novoBairro;
+  // Atualiza posição para o centro do bairro
+  const b = bairros.find(x => x.nome === p.bairro);
+  if (b) { p.lat = b.lat; p.lng = b.lng; }
+  salvar();
+  renderTudo();
+}
+
+function adicionarPessoa() {
+  const nome = document.getElementById('inp-nome').value.trim();
+  const bairro = document.getElementById('inp-bairro').value;
+  const cor = document.getElementById('cor-input').value;
+
+  if (!nome) { alert('Digite o nome!'); return; }
+  if (!bairro) { alert('Selecione o bairro!'); return; }
+
+  const b = bairros.find(x => x.nome === bairro);
+  const lat = latTemp !== null ? latTemp : b.lat;
+  const lng = lngTemp !== null ? lngTemp : b.lng;
+
+  pessoas.push({ id: 'p' + Date.now(), nome, bairro, obs: '', lat, lng, cor });
+  salvar();
+  renderTudo();
+
+  document.getElementById('inp-nome').value = '';
+  document.getElementById('inp-bairro').value = '';
+  document.getElementById('cor-input').value = '#7F77DD';
+  latTemp = null; lngTemp = null;
+  if (markerTemp) { map.removeLayer(markerTemp); markerTemp = null; }
+  document.getElementById('instrucao').textContent = '📌 Clique no mapa para ajustar a posição (opcional)';
+  document.getElementById('instrucao').style.color = '#999';
+}
+
+function remover(id) {
+  const p = pessoas.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`Remover ${p.nome}?`)) return;
+  pessoas = pessoas.filter(x => x.id !== id);
+  salvar();
+  renderTudo();
+}
+
+function abrirEditar(id) {
+  const p = pessoas.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('edit-id').value = p.id;
+  document.getElementById('edit-nome').value = p.nome;
+  document.getElementById('edit-bairro').value = p.bairro;
+  document.getElementById('edit-obs').value = p.obs || '';
+  document.getElementById('edit-cor').value = p.cor;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function salvarEdicao() {
+  const id = document.getElementById('edit-id').value;
+  const p = pessoas.find(x => x.id === id);
+  if (!p) return;
+
+  const novoBairro = document.getElementById('edit-bairro').value;
+  p.nome = document.getElementById('edit-nome').value.trim();
+  p.bairro = novoBairro;
+  p.obs = document.getElementById('edit-obs').value.trim();
+  p.cor = document.getElementById('edit-cor').value;
+
+  const b = bairros.find(x => x.nome === novoBairro);
+  if (b) { p.lat = b.lat; p.lng = b.lng; }
+
+  salvar();
+  renderTudo();
+  fecharModal();
+}
+
+function fecharModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+// ============================================================
+// CLIQUE NO MAPA
+// ============================================================
+map.on('click', function(e) {
+  latTemp = e.latlng.lat;
+  lngTemp = e.latlng.lng;
+  if (markerTemp) map.removeLayer(markerTemp);
+  markerTemp = L.circleMarker([latTemp, lngTemp], {
+    radius: 8, color: '#7F77DD', fillColor: '#7F77DD', fillOpacity: 0.7
+  }).addTo(map);
+  document.getElementById('instrucao').textContent = '✅ Local marcado! Agora clique em Adicionar.';
+  document.getElementById('instrucao').style.color = '#1D9E75';
+});
+
+// ============================================================
+// ABAS
+// ============================================================
+function mostrarAba(aba) {
+  document.querySelectorAll('.aba').forEach(b => b.classList.remove('ativa'));
+  event.target.classList.add('ativa');
+  document.getElementById('aba-pessoas').style.display = aba === 'pessoas' ? 'block' : 'none';
+  document.getElementById('aba-bairros').style.display = aba === 'bairros' ? 'block' : 'none';
+}
+
+// Fechar modal ao clicar fora
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target.id === 'modal') fecharModal();
+});
+
+window.addEventListener('load', init);
+</script>
 </body>
 </html>
