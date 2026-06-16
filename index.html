@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Mapa - Meninas de Chapecó</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -226,7 +229,10 @@ function gerarId(texto) {
 }
 
 function salvarNoBanco() {
-  db.set(meninas);
+  console.log('SALVANDO NO BANCO:', JSON.parse(JSON.stringify(meninas)));
+  db.set(meninas)
+    .then(() => console.log('SALVO COM SUCESSO'))
+    .catch(err => { console.error('ERRO AO SALVAR:', err); alert('Erro ao salvar: ' + err.message); });
 }
 
 function renderTudo() {
@@ -262,7 +268,9 @@ function renderTudo() {
 function remover(id) {
   const nome = meninas[id]?.nome || 'esta pessoa';
   if (!confirm(`Remover ${nome}?`)) return;
+  console.log('REMOVENDO ID:', id);
   delete meninas[id];
+  console.log('ESTADO APOS REMOVER:', JSON.parse(JSON.stringify(meninas)));
   salvarNoBanco();
 }
 
@@ -290,9 +298,11 @@ function adicionarMenina() {
 // Carrega dados do Firebase em tempo real
 db.on('value', snapshot => {
   const dados = snapshot.val();
+  console.log('DADOS RECEBIDOS DO FIREBASE:', dados);
   if (dados && typeof dados === 'object') {
     meninas = dados;
   } else {
+    console.log('BANCO VAZIO - CARREGANDO INICIAIS');
     meninas = { ...meninasIniciais };
     salvarNoBanco();
   }
