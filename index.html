@@ -190,6 +190,34 @@
       localStorage.setItem('mapaChapecoPessoas', JSON.stringify(pessoas));
     }
 
+    function atualizarMarcadores() {
+      // Bairros que devem ter marcador (com pelo menos 1 pessoa)
+      const bairrosComPessoas = new Set(pessoas.map(p => p.bairro).filter(Boolean));
+
+      // Remover marcadores de bairros sem pessoas
+      Object.keys(marcadores).forEach(nome => {
+        if (!bairrosComPessoas.has(nome)) {
+          map.removeLayer(marcadores[nome]);
+          delete marcadores[nome];
+        }
+      });
+
+      // Adicionar marcadores para bairros com pessoas que ainda não têm
+      bairrosComPessoas.forEach(nome => {
+        if (marcadores[nome]) {
+          atualizarPopup(nome);
+          return;
+        }
+        const b = bairros.find(x => x.nome === nome);
+        if (!b) return;
+        const marker = L.marker([b.lat, b.lng]).addTo(map);
+        marker.bindPopup(criarPopupContent(b.nome));
+        marker.on('click', () => atualizarPopup(b.nome));
+        marcadores[b.nome] = marker;
+        atualizarPopup(b.nome);
+      });
+    }
+
     function initMapa() {
       map = L.map('map').setView([-27.1005, -52.6152], 13);
 
@@ -205,13 +233,7 @@
 
       camadaSatelite.addTo(map);
 
-      bairros.forEach(b => {
-        const qtd = pessoas.filter(p => p.bairro === b.nome).length;
-        const marker = L.marker([b.lat, b.lng]).addTo(map);
-        marker.bindPopup(criarPopupContent(b.nome));
-        marker.on('click', () => atualizarPopup(b.nome));
-        marcadores[b.nome] = marker;
-      });
+      atualizarMarcadores();
 
       const legend = L.control({ position: 'bottomright' });
       legend.onAdd = function () {
@@ -328,8 +350,8 @@
       if (!p) return;
       p.bairro = novoBairro === 'Não alocado' ? '' : novoBairro;
       salvarDados();
+      atualizarMarcadores();
       renderSidebar();
-      atualizarPopup(p.bairro || 'Não alocado');
       if (p.bairro && marcadores[p.bairro]) marcadores[p.bairro].openPopup();
     }
 
@@ -370,6 +392,7 @@
         pessoas.push({ id: 'p' + Date.now(), nome, bairro, obs });
       }
       salvarDados();
+      atualizarMarcadores();
       renderSidebar();
       fecharModal();
       if (bairro && marcadores[bairro]) marcadores[bairro].openPopup();
@@ -381,6 +404,7 @@
       if (!confirm('Tem certeza que deseja excluir?')) return;
       pessoas = pessoas.filter(p => p.id !== id);
       salvarDados();
+      atualizarMarcadores();
       renderSidebar();
     }
 
@@ -464,6 +488,7 @@
           if (!Array.isArray(dados)) throw new Error('Formato inválido');
           pessoas = dados;
           salvarDados();
+          atualizarMarcadores();
           renderSidebar();
           alert('Dados importados com sucesso!');
         } catch (err) {
