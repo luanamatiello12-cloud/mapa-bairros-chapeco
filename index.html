@@ -187,19 +187,19 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database().ref('meninas');
 
-const meninasIniciais = [
-  { nome: "Tayna",            bairro: "Passo dos Fortes",          lat: -27.1060, lng: -52.5980, cor: "#7F77DD" },
-  { nome: "Marta",            bairro: "Efapi (perto do presídio)", lat: -27.0930, lng: -52.6210, cor: "#D85A30" },
-  { nome: "Manu",             bairro: "Efapi (perto das Araras)",  lat: -27.0930, lng: -52.6210, cor: "#1D9E75" },
-  { nome: "Cecília",          bairro: "Presidente Médici",         lat: -27.1150, lng: -52.6200, cor: "#D4537E" },
-  { nome: "Letícia Begnini",  bairro: "Jardim América",            lat: -27.1050, lng: -52.6300, cor: "#BA7517" },
-  { nome: "Thaemi",           bairro: "São Cristóvão",             lat: -27.0980, lng: -52.6350, cor: "#378ADD" },
-  { nome: "Letícia Vanzella", bairro: "Centro",                    lat: -27.1005, lng: -52.6152, cor: "#639922" },
-  { nome: "Luana Matiello",   bairro: "São Pedro",                 lat: -27.1080, lng: -52.6120, cor: "#E24B4A" },
-  { nome: "Isadora Reichert", bairro: "Bela Vista",                lat: -27.1100, lng: -52.6250, cor: "#533AB7" }
-];
+const meninasIniciais = {
+  tayna:            { nome: "Tayna",            bairro: "Passo dos Fortes",          lat: -27.1060, lng: -52.5980, cor: "#7F77DD" },
+  marta:            { nome: "Marta",            bairro: "Efapi (perto do presídio)", lat: -27.0930, lng: -52.6210, cor: "#D85A30" },
+  manu:             { nome: "Manu",             bairro: "Efapi (perto das Araras)",  lat: -27.0930, lng: -52.6210, cor: "#1D9E75" },
+  cecilia:          { nome: "Cecília",          bairro: "Presidente Médici",         lat: -27.1150, lng: -52.6200, cor: "#D4537E" },
+  leticiabegnini:   { nome: "Letícia Begnini",  bairro: "Jardim América",            lat: -27.1050, lng: -52.6300, cor: "#BA7517" },
+  thaemi:           { nome: "Thaemi",           bairro: "São Cristóvão",             lat: -27.0980, lng: -52.6350, cor: "#378ADD" },
+  leticiavanzella:  { nome: "Letícia Vanzella", bairro: "Centro",                    lat: -27.1005, lng: -52.6152, cor: "#639922" },
+  luanamatiello:    { nome: "Luana Matiello",   bairro: "São Pedro",                 lat: -27.1080, lng: -52.6120, cor: "#E24B4A" },
+  isadorareichert:  { nome: "Isadora Reichert", bairro: "Bela Vista",                lat: -27.1100, lng: -52.6250, cor: "#533AB7" }
+};
 
-let meninas = [];
+let meninas = {};
 let latSelecionada = null;
 let lngSelecionada = null;
 let markerTemp = null;
@@ -221,10 +221,12 @@ map.on('click', function(e) {
   document.getElementById('instrucao').style.color = '#1D9E75';
 });
 
+function gerarId(texto) {
+  return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') + Date.now();
+}
+
 function salvarNoBanco() {
-  // Garante array sem buracos antes de salvar
-  const arr = Array.from(meninas).filter(m => m && m.nome);
-  db.set(arr);
+  db.set(meninas);
 }
 
 function renderTudo() {
@@ -232,7 +234,8 @@ function renderTudo() {
   marcadores = [];
   document.getElementById('lista').innerHTML = '';
 
-  meninas.forEach((m, i) => {
+  Object.entries(meninas).forEach(([id, m]) => {
+    if (!m) return;
     const icon = L.divIcon({
       html: `<div class="marker-label" style="background:${m.cor}">${m.nome}</div>`,
       className: '', iconAnchor: [0, 0]
@@ -250,15 +253,16 @@ function renderTudo() {
         <div class="item-nome">${m.nome}</div>
         <div class="item-bairro">${m.bairro}</div>
       </div>
-      <button class="btn-remover" onclick="remover(${i})" title="Remover">×</button>
+      <button class="btn-remover" onclick="remover('${id}')" title="Remover">×</button>
     `;
     document.getElementById('lista').appendChild(div);
   });
 }
 
-function remover(i) {
-  if (!confirm(`Remover ${meninas[i].nome}?`)) return;
-  meninas.splice(i, 1);
+function remover(id) {
+  const nome = meninas[id]?.nome || 'esta pessoa';
+  if (!confirm(`Remover ${nome}?`)) return;
+  delete meninas[id];
   salvarNoBanco();
 }
 
@@ -271,7 +275,8 @@ function adicionarMenina() {
   if (!bairro) { alert('Digite o bairro!'); return; }
   if (!latSelecionada) { alert('Clique no mapa para marcar a localização!'); return; }
 
-  meninas.push({ nome, bairro, lat: latSelecionada, lng: lngSelecionada, cor });
+  const id = gerarId(nome);
+  meninas[id] = { nome, bairro, lat: latSelecionada, lng: lngSelecionada, cor };
   salvarNoBanco();
 
   document.getElementById('inp-nome').value = '';
@@ -285,11 +290,10 @@ function adicionarMenina() {
 // Carrega dados do Firebase em tempo real
 db.on('value', snapshot => {
   const dados = snapshot.val();
-  if (dados) {
-    // Firebase pode retornar objeto quando o array tem índices não sequenciais
-    meninas = Array.isArray(dados) ? dados.filter(m => m) : Object.values(dados).filter(m => m);
+  if (dados && typeof dados === 'object') {
+    meninas = dados;
   } else {
-    meninas = [...meninasIniciais];
+    meninas = { ...meninasIniciais };
     salvarNoBanco();
   }
   document.getElementById('status').textContent = 'Sincronizado ✅';
