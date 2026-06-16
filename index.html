@@ -222,7 +222,9 @@ map.on('click', function(e) {
 });
 
 function salvarNoBanco() {
-  db.set(meninas);
+  // Garante array sem buracos antes de salvar
+  const arr = Array.from(meninas).filter(m => m && m.nome);
+  db.set(arr);
 }
 
 function renderTudo() {
@@ -283,8 +285,9 @@ function adicionarMenina() {
 // Carrega dados do Firebase em tempo real
 db.on('value', snapshot => {
   const dados = snapshot.val();
-  if (dados && Array.isArray(dados)) {
-    meninas = dados;
+  if (dados) {
+    // Firebase pode retornar objeto quando o array tem índices não sequenciais
+    meninas = Array.isArray(dados) ? dados.filter(m => m) : Object.values(dados).filter(m => m);
   } else {
     meninas = [...meninasIniciais];
     salvarNoBanco();
