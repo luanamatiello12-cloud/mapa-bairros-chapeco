@@ -139,6 +139,25 @@
       padding-bottom: 4px;
     }
 
+    #lista-vazia {
+      text-align: center;
+      color: #999;
+      font-size: 13px;
+      padding: 14px;
+    }
+
+    #btn-reset {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      color: #555;
+      padding: 8px 14px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    #btn-reset:hover { background: #e0e0e0; }
+
     .marker-label {
       color: white;
       padding: 5px 10px;
@@ -161,6 +180,10 @@
 <div id="painel">
   <div id="status">Carregando...</div>
   <div id="lista"></div>
+  <div id="lista-vazia" style="display:none;">
+    Nenhuma pessoa cadastrada.<br>
+    <button id="btn-reset" onclick="restaurarPadrao()">Restaurar padrão</button>
+  </div>
 
   <div id="form-add">
     <input id="inp-nome" type="text" placeholder="Nome (ex: Ana)" />
@@ -236,7 +259,12 @@ function renderTudo() {
   marcadores = {};
   document.getElementById('lista').innerHTML = '';
 
-  Object.entries(meninas).forEach(([id, m]) => {
+  const ids = Object.entries(meninas).filter(([id, m]) => m);
+  const vazia = ids.length === 0;
+  document.getElementById('lista').style.display = vazia ? 'none' : 'flex';
+  document.getElementById('lista-vazia').style.display = vazia ? 'block' : 'none';
+
+  ids.forEach(([id, m]) => {
     if (!m) return;
 
     // Marcador no mapa
@@ -302,8 +330,7 @@ db.on('value', snapshot => {
   if (dados && typeof dados === 'object') {
     meninas = dados;
   } else {
-    meninas = { ...meninasIniciais };
-    db.set(meninas);
+    meninas = {};
   }
   document.getElementById('status').textContent = 'Sincronizado ✅';
   renderTudo();
@@ -311,6 +338,12 @@ db.on('value', snapshot => {
   document.getElementById('status').textContent = 'Erro ao sincronizar ❌';
   console.error(erro);
 });
+
+function restaurarPadrao() {
+  if (!confirm('Restaurar as 9 meninas iniciais? Isso apaga os dados atuais.')) return;
+  meninas = { ...meninasIniciais };
+  db.set(meninas);
+}
 </script>
 </body>
 </html>
