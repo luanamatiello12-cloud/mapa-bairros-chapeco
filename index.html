@@ -159,7 +159,7 @@
 <div id="map"></div>
 
 <div id="painel">
-  <div id="status">Carregando dados...</div>
+  <div id="status">Carregando...</div>
   <div id="lista"></div>
 
   <div id="form-add">
@@ -188,7 +188,8 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database().ref('meninas');
+// Usa um novo caminho no Firebase para garantir dados limpos
+const db = firebase.database().ref('v2/meninas');
 
 const meninasIniciais = {
   tayna:            { nome: "Tayna",            bairro: "Passo dos Fortes",          lat: -27.1060, lng: -52.5980, cor: "#7F77DD" },
@@ -206,7 +207,7 @@ let meninas = {};
 let latSelecionada = null;
 let lngSelecionada = null;
 let markerTemp = null;
-let marcadores = [];
+let marcadores = {};
 
 const map = L.map('map').setView([-27.085, -52.628], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -225,32 +226,29 @@ map.on('click', function(e) {
 });
 
 function gerarId(texto) {
-  return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '') + Date.now();
-}
-
-function salvarNoBanco() {
-  console.log('SALVANDO NO BANCO:', JSON.parse(JSON.stringify(meninas)));
-  db.set(meninas)
-    .then(() => console.log('SALVO COM SUCESSO'))
-    .catch(err => { console.error('ERRO AO SALVAR:', err); alert('Erro ao salvar: ' + err.message); });
+  const base = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  return base + '-' + Date.now();
 }
 
 function renderTudo() {
-  marcadores.forEach(m => map.removeLayer(m));
-  marcadores = [];
+  // Remove marcadores antigos
+  Object.values(marcadores).forEach(m => map.removeLayer(m));
+  marcadores = {};
   document.getElementById('lista').innerHTML = '';
 
   Object.entries(meninas).forEach(([id, m]) => {
     if (!m) return;
+
+    // Marcador no mapa
     const icon = L.divIcon({
       html: `<div class="marker-label" style="background:${m.cor}">${m.nome}</div>`,
       className: '', iconAnchor: [0, 0]
     });
-    const mk = L.marker([m.lat, m.lng], { icon })
+    marcadores[id] = L.marker([m.lat, m.lng], { icon })
       .addTo(map)
       .bindPopup(`<b>${m.nome}</b><br>${m.bairro}`);
-    marcadores.push(mk);
 
+    // Card na lista
     const div = document.createElement('div');
     div.className = 'item';
     div.innerHTML = `
@@ -268,10 +266,10 @@ function renderTudo() {
 function remover(id) {
   const nome = meninas[id]?.nome || 'esta pessoa';
   if (!confirm(`Remover ${nome}?`)) return;
-  console.log('REMOVENDO ID:', id);
-  delete meninas[id];
-  console.log('ESTADO APOS REMOVER:', JSON.parse(JSON.stringify(meninas)));
-  salvarNoBanco();
+  // Remove apenas esse registro no Firebase, sem sobrescrever tudo
+  db.child(id).remove()
+    .then(() => console.log('Removido:', id))
+    .catch(err => { console.error('Erro ao remover:', err); alert('Erro ao remover: ' + err.message); });
 }
 
 function adicionarMenina() {
@@ -284,8 +282,11 @@ function adicionarMenina() {
   if (!latSelecionada) { alert('Clique no mapa para marcar a localização!'); return; }
 
   const id = gerarId(nome);
-  meninas[id] = { nome, bairro, lat: latSelecionada, lng: lngSelecionada, cor };
-  salvarNoBanco();
+  const dados = { nome, bairro, lat: latSelecionada, lng: lngSelecionada, cor };
+
+  db.child(id).set(dados)
+    .then(() => console.log('Adicionado:', id))
+    .catch(err => { console.error('Erro ao adicionar:', err); alert('Erro ao adicionar: ' + err.message); });
 
   document.getElementById('inp-nome').value = '';
   document.getElementById('inp-bairro').value = '';
@@ -298,18 +299,16 @@ function adicionarMenina() {
 // Carrega dados do Firebase em tempo real
 db.on('value', snapshot => {
   const dados = snapshot.val();
-  console.log('DADOS RECEBIDOS DO FIREBASE:', dados);
   if (dados && typeof dados === 'object') {
     meninas = dados;
   } else {
-    console.log('BANCO VAZIO - CARREGANDO INICIAIS');
     meninas = { ...meninasIniciais };
-    salvarNoBanco();
+    db.set(meninas);
   }
   document.getElementById('status').textContent = 'Sincronizado ✅';
   renderTudo();
 }, erro => {
-  document.getElementById('status').textContent = 'Erro ao carregar dados ❌';
+  document.getElementById('status').textContent = 'Erro ao sincronizar ❌';
   console.error(erro);
 });
 </script>
